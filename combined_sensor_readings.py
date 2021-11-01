@@ -128,6 +128,7 @@ class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
         self.scaleM = 4912.0 / 32760
         self.scaleG = 500.0/65536.0
         self.add = address
+        self.pitch = 0
 
     def cb_sensor(self, data):
         '''Returns (x_accel, y_accel, z_accel) in units of g'''
@@ -145,7 +146,8 @@ class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
             pitch = 180 * math.atan (accel[0]/math.sqrt(accel[1]*accel[1] + accel[2]*accel[2]))/math.pi
             roll = 180 * math.atan (accel[2]/math.sqrt(accel[1]*accel[1] + accel[2]*accel[2]))/math.pi
             yaw = 180 * math.atan(accel[0]/math.sqrt(accel[0]*accel[0] + accel[2]*accel[2]))/math.pi
-            print("[{add}] roll: {roll}, pitch: {pitch}, yaw: {yaw}".format(add = self.add, roll = roll, pitch = pitch, yaw = yaw))
+            #print("[{add}] roll: {roll}, pitch: {pitch}, yaw: {yaw}".format(add = self.add, roll = roll, pitch = pitch, yaw = yaw))
+            self.pitch = pitch
             #Add code for MQTT here
 """             with open('rpy.csv', 'w', newline='') as csvfile:
                 wr = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
@@ -218,58 +220,9 @@ class GyroscopeSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
             #      open('./train/IndividualSignals/gyro_z_train.csv','a') as c:
             #     a.write("{}\n".format(rawVals[0]))
             #     b.write("{}\n".format(rawVals[1]))
-            #     c.write("{}\n".format(rawVals[2]))
-                
-                print("[MovementSensor] Gyroscope:", tuple([ v*self.scale for v in rawVals ]))
-        
+            #     c.write("{}\n".format(rawVals[2])) 
+            print("[MovementSensor] Gyroscope:", tuple([ v*self.scale for v in rawVals ]))
 
-
-class OpticalSensor(Sensor):
-    def __init__(self):
-        super().__init__()
-        self.data_uuid = "f000aa71-0451-4000-b000-000000000000"
-        self.ctrl_uuid = "f000aa72-0451-4000-b000-000000000000"
-
-    def callback(self, sender: int, data: bytearray):
-        raw = struct.unpack('<h', data)[0]
-        m = raw & 0xFFF
-        e = (raw & 0xF000) >> 12
-        print("[OpticalSensor] Reading from light sensor:", 0.01 * (m << e))
-
-
-class HumiditySensor(Sensor):
-    def __init__(self):
-        super().__init__()
-        self.data_uuid = "f000aa21-0451-4000-b000-000000000000"
-        self.ctrl_uuid = "f000aa22-0451-4000-b000-000000000000"
-
-    def callback(self, sender: int, data: bytearray):
-        (rawT, rawH) = struct.unpack('<HH', data)
-        temp = -40.0 + 165.0 * (rawT / 65536.0)
-        RH = 100.0 * (rawH/65536.0)
-        print(f"[HumiditySensor] Ambient temp: {temp}; Relative Humidity: {RH}")
-
-
-class BarometerSensor(Sensor):
-    def __init__(self):
-        super().__init__()
-        self.data_uuid = "f000aa41-0451-4000-b000-000000000000"
-        self.ctrl_uuid = "f000aa42-0451-4000-b000-000000000000"
-
-    def callback(self, sender: int, data: bytearray):
-        global READY
-        if READY >= 1:
-            (tL, tM, tH, pL, pM, pH) = struct.unpack('<BBBBBB', data)
-            temp = (tH*65536 + tM*256 + tL) / 100.0
-            press = (pH*65536 + pM*256 + pL) / 100.0
-            # with open('./train/IndividualSignals/baro_train.csv','a') as f:
-            #     f.write(str(press)) 
-            #     f.write('\n') 
-            # with open('./train/y_train.csv','a') as f:
-            #     f.write(LABEL) 
-            #     f.write('\n') 
-            
-            print(f"[BarometerSensor] Ambient temp: {temp}; Pressure Millibars: {press}")
 
 
 class LEDAndBuzzer(Service):
@@ -317,65 +270,68 @@ async def take_reading(address, posture):
         movement_sensor.register(acc_sensor)
         await movement_sensor.onDemand(client, posture)
 
+Acc1 = AllMovementSensorsMPU9250("54:6C:0E:52:F3:D1")
+movement_sensor1 = MovementSensorMPU9250("54:6C:0E:52:F3:D1")
+movement_sensor1.register(Acc1)
 
-async def run(address):
+Acc2 = AllMovementSensorsMPU9250("Address2")
+movement_sensor2 = MovementSensorMPU9250("Address2")
+movement_sensor2.register(Acc2)
+
+Acc3 = AllMovementSensorsMPU9250("Address3")
+movement_sensor3 = MovementSensorMPU9250("Address3")
+movement_sensor3.register(Acc3)
+
+
+
+async def run_1(address):
     async with BleakClient(address) as client:
         x = await client.is_connected()
-        print("Connected: {0}".format(x))
-        all_sensor = AllMovementSensorsMPU9250(address)
-        movement_sensor = MovementSensorMPU9250(address)
-        movement_sensor.register(all_sensor)
-        await movement_sensor.start_listener(client)
+        print("Sensor 1 Connected: {0}".format(x))
+        await movement_sensor1.start_listener(client)
+        while True:
+            # we don't want to exit the "with" block initiating the client object 
+            # as the connection is disconnected unless the object is stored
+            await asyncio.sleep(0.1)
 
+async def run_2(address):
+    async with BleakClient(address) as client:
+        x = await client.is_connected()
+        print("Sensor 2 Connected: {0}".format(x))
+        await movement_sensor2.start_listener(client)
+        while True:
+            # we don't want to exit the "with" block initiating the client object 
+            # as the connection is disconnected unless the object is stored
+            await asyncio.sleep(0.1)
+
+async def run_3(address):
+    async with BleakClient(address) as client:
+        x = await client.is_connected()
+        print("Sensor 3 Connected: {0}".format(x))
+        await movement_sensor3.start_listener(client)
         cntr = 0
 
         while True:
             # we don't want to exit the "with" block initiating the client object 
             # as the connection is disconnected unless the object is stored
             await asyncio.sleep(0.1)
-            if cntr == 0:
-                # shine the red light
-                #await led_and_buzzer.notify(client, 0x01)
-                pass
-
-            if cntr == 5:
-                # shine the green light
-                #await led_and_buzzer.notify(client, 0x02)
-                pass
-
-            cntr += 1
-
-            if cntr == 10:
-                cntr = 0
 
 
-def main(addresses):
-    return asyncio.gather(*(run(address) for address in addresses))
+async def print_value(sensor1, sensor2, sensor3):
+    while True:
+        print(f"pitch_1: {sensor1.pitch}, pitch_2: {sensor2.pitch}, pitch_3: {sensor3.pitch}")
+        await asyncio.sleep(1)
+        #Can mqtt from here, values are sensor1.pitch, sensor2.pitch and sensor3.pitch
 
+
+async def main():
+    print("Setting up. First values are garbage values.")
+    await asyncio.gather(run_1("54:6C:0E:52:F3:D1"), print_value(Acc1,Acc2,Acc3))
+    #run the bottom function instead for multile sensors
+    #await asyncio.gather(run_1("54:6C:0E:52:F3:D1"),run_2("Address2"), run_3("Address3"), print_value(Acc1,Acc2,Acc3))
 
 if __name__ == "__main__":
-    """
-    To find the address, once your sensor tag is blinking the green led after pressing the button, run the discover.py
-    file which was provided as an example from bleak to identify the sensor tag device
-    """
-
-    import os
-
-    os.environ["PYTHONASYNCIODEBUG"] = str(1)
-
-    while True:
-        i = input("1:Take 1 reading,2:Continuous readings, 3: Exit\n")
-        if(i == "1"):
-            posture = input("Posture type: ")
-            asyncio.run(take_reading("54:6C:0E:52:F3:D1", posture))
-        elif(i == "2"):
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(main(["54:6C:0E:52:F3:D1"]))
-
-            #loop.run_until_complete(main(["54:6C:0E:52:F3:D1", address_2]))
-            loop.run_forever()
-        elif(i =="3"):
-            break
+    asyncio.run(main())
 
         
 
