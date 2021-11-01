@@ -104,7 +104,7 @@ class MovementSensorMPU9250(Sensor):
         accel = tuple([ v*self.scaleA for v in rawA ])
         pitch = 180 * math.atan (accel[0]/math.sqrt(accel[1]*accel[1] + accel[2]*accel[2]))/math.pi
         roll = 180 * math.atan (accel[2]/math.sqrt(accel[1]*accel[1] + accel[2]*accel[2]))/math.pi
-        yaw = 180 * math.atan(accel[0]/math.sqrt(accel[0]*accel[0] + accel[2]*accel[2]))/math.pi
+        yaw = 180 * math.atan (accel[0]/math.sqrt(accel[0]*accel[0] + accel[2]*accel[2]))/math.pi
         print("roll: {roll}, pitch: {pitch}, yaw: {yaw}".format(roll = roll, pitch = pitch, yaw = yaw))
         """ with open('rpy.csv', 'w', newline='') as csvfile:
             wr = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
@@ -150,9 +150,6 @@ class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
 """             with open('rpy.csv', 'w', newline='') as csvfile:
                 wr = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
                 wr.writerow([time.strftime("%H:%M:%S"), self.add, roll, pitch, yaw]) """
-            #print(time.strftime("%H:%M:%S"), "[MovementSensor] Gyro:", tuple([ v*self.scaleG for v in rawG ]))
-            #print(time.strftime("%H:%M:%S"), "[MovementSensor] Accel:", tuple([ v*self.scaleA for v in rawA ]))
-            #print(time.strftime("%H:%M:%S"), "[MovementSensor] Mag:", tuple([ v*self.scaleM for v in rawM ]))
 
 
 class AccelerometerSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
@@ -310,21 +307,11 @@ async def connectBLE(address):
         x = await client.is_connected()
         return client
 
-async def takereading(client,address):
-    acc_sensor = AccelerometerSensorMovementSensorMPU9250()
-    gyro_sensor = GyroscopeSensorMovementSensorMPU9250()
-    magneto_sensor = MagnetometerSensorMovementSensorMPU9250()
-
-    movement_sensor = MovementSensorMPU9250(address)
-    movement_sensor.register(acc_sensor)
-    movement_sensor.register(gyro_sensor)
-    movement_sensor.register(magneto_sensor)
-    await movement_sensor.onDemand(client)
-
 
 async def take_reading(address, posture):
     async with BleakClient(address) as client:
         x = await client.is_connected()    
+        print("Connected: {0}".format(x))
         acc_sensor = AccelerometerSensorMovementSensorMPU9250()
         movement_sensor = MovementSensorMPU9250(address)
         movement_sensor.register(acc_sensor)
@@ -335,8 +322,6 @@ async def run(address):
     async with BleakClient(address) as client:
         x = await client.is_connected()
         print("Connected: {0}".format(x))
-
-        led_and_buzzer = LEDAndBuzzer()
         all_sensor = AllMovementSensorsMPU9250(address)
         movement_sensor = MovementSensorMPU9250(address)
         movement_sensor.register(all_sensor)
