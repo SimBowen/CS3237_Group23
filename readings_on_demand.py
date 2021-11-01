@@ -9,10 +9,10 @@ Adapted by Ashwin from the following sources:
 
 """
 import asyncio
+import csv
 import math
 import platform
 import struct
-import csv
 import time
 
 from bleak import BleakClient
