@@ -4,11 +4,15 @@ version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 
+[tool.poetry.scripts]
+up_goer = "up_goer.cli:run"
+
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
 bleak = "^0.13.0"
 paho-mqtt = "^1.6.1"
 python-dotenv = "^0.19.1"
+click = "^8.0.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
