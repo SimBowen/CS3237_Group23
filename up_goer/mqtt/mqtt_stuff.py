@@ -1,4 +1,3 @@
-import dotenv
 import paho.mqtt.client as mqtt
 from dotenv import dotenv_values
 
