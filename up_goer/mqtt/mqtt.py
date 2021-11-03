@@ -1,3 +1,7 @@
+import uuid
+from dataclasses import dataclass
+from enum import Enum
+
 import click
 import paho.mqtt.client as mqtt
 from dotenv import dotenv_values
@@ -7,6 +11,27 @@ USER = "guest"
 PASSWORD = dotenv_values["SERVER_PASSWORD"]
 PREDICT_TOPIC = "posture/predict"
 CLASSIFY_TOPIC = "posture/classify"
+
+class Prediction(Enum):
+    BAD = 0
+    GOOD = 1
+
+class Mock(Enum):
+    REAL = 0
+    MOCKED = 1
+
+@dataclass(frozen=True)
+class ClassifyingData:
+    id = uuid.uuid()
+    data: list[float]
+
+@dataclass(frozen=True)
+class PredictingData:
+    id = uuid.uuid()
+    prediction: Prediction
+    """Confidence level, if available"""
+    score: float or None
+    mock: Mock
 
 
 def on_connect(client: mqtt.Client, userdata, flags, result_code):
