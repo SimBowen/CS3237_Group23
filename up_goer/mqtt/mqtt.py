@@ -12,18 +12,22 @@ PASSWORD = dotenv_values["SERVER_PASSWORD"]
 PREDICT_TOPIC = "posture/predict"
 CLASSIFY_TOPIC = "posture/classify"
 
+
 class Prediction(Enum):
     BAD = 0
     GOOD = 1
+
 
 class Mock(Enum):
     REAL = 0
     MOCKED = 1
 
+
 @dataclass(frozen=True)
 class ClassifyingData:
     id = uuid.uuid()
     data: list[float]
+
 
 @dataclass(frozen=True)
 class PredictingData:
