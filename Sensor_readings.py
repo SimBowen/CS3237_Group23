@@ -17,7 +17,10 @@ import struct
 import time
 from pathlib import Path
 
+import paho.mqtt.client as mqtt
 from bleak import BleakClient
+
+from up_goer.mqtt.mqtt import CLASSIFY_TOPIC, ClassifyingData, create_client
 
 LABEL = "1"
 READY = -1
@@ -400,6 +403,7 @@ def write_csv(data: str, filename: str):
 
 
 async def print_value(sensor1, sensor2, sensor3):
+    global client
 
     while True:
         # print(
@@ -413,16 +417,19 @@ async def print_value(sensor1, sensor2, sensor3):
         data = f"\n{data}"
         if not data:
             continue
-        write_csv(data, "data.csv")
+        client.publish(
+            CLASSIFY_TOPIC, ClassifyingData([sensor1.roll, sensor2.roll, sensor3.roll])
+        )
         print(f"roll_1: {sensor1.roll}, roll_2: {sensor2.roll}, roll_3: {sensor3.roll}")
-        # print(
-        #    f"yaw_1: {sensor1.yaw}, yaw_2: {sensor2.yaw}, yaw_3: {sensor3.yaw}"
-        # )
         await asyncio.sleep(1)
         # Can mqtt from here, values are sensor1.pitch, sensor2.pitch and sensor3.pitch
 
 
+client: mqtt.Client = create_client()
+
+
 async def main():
+    # client = create_client()
     print("Setting up. First values are garbage values.")
     # await asyncio.gather(run_1("54:6C:0E:52:F3:D1"), print_value(Acc1, Acc2, Acc3))
     # await asyncio.gather(run_1("54:6C:0E:52:F3:D1"),run_2("54:6C:0E:53:37:DA"), print_value(Acc1,Acc2,Acc3))
