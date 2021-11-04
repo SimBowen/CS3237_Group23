@@ -14,6 +14,8 @@ import math
 import platform
 import struct
 import time
+from pathlib import Path
+import os
 
 from bleak import BleakClient
 
@@ -150,6 +152,12 @@ class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
         self.scaleG = 500.0 / 65536.0
         self.add = address
         self.pitch = 200
+        self.roll = 200
+        self.yaw = 200
+        self.a =(0,0,0)
+        self.m =(0,0,0)
+        self.g =(0,0,0)
+        
 
     def cb_sensor(self, data):
         """Returns (x_accel, y_accel, z_accel) in units of g"""
@@ -164,29 +172,42 @@ class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
             print("Setup ready, please do your action...")
         elif READY >= 2:
             accel = tuple([v * self.scaleA for v in rawA])
-            pitch = (
-                180
-                * math.atan(
-                    accel[0] / math.sqrt(accel[1] * accel[1] + accel[2] * accel[2])
+            mag = tuple([v * self.scaleA for v in rawM])
+            gyro = tuple([v * self.scaleA for v in rawG])
+            self.a = accel
+            self.m = mag
+            self.g = gyro
+            pitch = 0
+            roll = 0
+            yaw = 0
+            try:
+                pitch = (
+                    180
+                    * math.atan(
+                        accel[0] / math.sqrt(accel[1] * accel[1] + accel[2] * accel[2])
+                    )
+                    / math.pi
                 )
-                / math.pi
-            )
-            roll = (
-                180
-                * math.atan(
-                    accel[2] / math.sqrt(accel[1] * accel[1] + accel[2] * accel[2])
+                roll = (
+                    180
+                    * math.atan(
+                        accel[2] / math.sqrt(accel[1] * accel[1] + accel[2] * accel[2])
+                    )
+                    / math.pi
                 )
-                / math.pi
-            )
-            yaw = (
-                180
-                * math.atan(
-                    accel[0] / math.sqrt(accel[0] * accel[0] + accel[2] * accel[2])
+                yaw = (
+                    180
+                    * math.atan(
+                        accel[0] / math.sqrt(accel[0] * accel[0] + accel[2] * accel[2])
+                    )
+                    / math.pi
                 )
-                / math.pi
-            )
+            except:
+                pass
             # print("[{add}] roll: {roll}, pitch: {pitch}, yaw: {yaw}".format(add = self.add, roll = roll, pitch = pitch, yaw = yaw))
             self.pitch = pitch
+            self.roll = roll * 2
+            self.yaw = yaw
             # Add code for MQTT here
 
 
@@ -371,11 +392,35 @@ async def run_3(address):
             await asyncio.sleep(0.1)
 
 
+def write_csv(data: str, filename: str):
+    path = Path(filename)
+    mode = "a" if os.path.exists(path.parent) else "w"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, mode=mode) as file:
+        file.write(data)
+
+
 async def print_value(sensor1, sensor2, sensor3):
+
     while True:
+        # print(
+        #     f"pitch_1: {sensor1.pitch}, pitch_2: {sensor2.pitch}, pitch_3: {sensor3.pitch}"
+        # )
+        str_time = time.strftime("%H:%M:%S")
+        roll1 = str(sensor1.roll)
+        roll2 = str(sensor2.roll)
+        roll3 = str(sensor3.roll)
+        data = ",".join([str_time, roll1, roll2, roll3])
+        data = f"\n{data}"
+        if not data:
+            continue
+        write_csv(data, "data.csv")
         print(
-            f"pitch_1: {sensor1.pitch}, pitch_2: {sensor2.pitch}, pitch_3: {sensor3.pitch}"
+            f"roll_1: {sensor1.roll}, roll_2: {sensor2.roll}, roll_3: {sensor3.roll}"
         )
+        #print(
+        #    f"yaw_1: {sensor1.yaw}, yaw_2: {sensor2.yaw}, yaw_3: {sensor3.yaw}"
+        #)
         await asyncio.sleep(1)
         # Can mqtt from here, values are sensor1.pitch, sensor2.pitch and sensor3.pitch
 
