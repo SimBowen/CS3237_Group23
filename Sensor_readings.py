@@ -11,11 +11,11 @@ Adapted by Ashwin from the following sources:
 import asyncio
 import csv
 import math
+import os
 import platform
 import struct
 import time
 from pathlib import Path
-import os
 
 from bleak import BleakClient
 
@@ -154,10 +154,9 @@ class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
         self.pitch = 200
         self.roll = 200
         self.yaw = 200
-        self.a =(0,0,0)
-        self.m =(0,0,0)
-        self.g =(0,0,0)
-        
+        self.a = (0, 0, 0)
+        self.m = (0, 0, 0)
+        self.g = (0, 0, 0)
 
     def cb_sensor(self, data):
         """Returns (x_accel, y_accel, z_accel) in units of g"""
@@ -415,22 +414,25 @@ async def print_value(sensor1, sensor2, sensor3):
         if not data:
             continue
         write_csv(data, "data.csv")
-        print(
-            f"roll_1: {sensor1.roll}, roll_2: {sensor2.roll}, roll_3: {sensor3.roll}"
-        )
-        #print(
+        print(f"roll_1: {sensor1.roll}, roll_2: {sensor2.roll}, roll_3: {sensor3.roll}")
+        # print(
         #    f"yaw_1: {sensor1.yaw}, yaw_2: {sensor2.yaw}, yaw_3: {sensor3.yaw}"
-        #)
+        # )
         await asyncio.sleep(1)
         # Can mqtt from here, values are sensor1.pitch, sensor2.pitch and sensor3.pitch
 
 
 async def main():
     print("Setting up. First values are garbage values.")
-    #await asyncio.gather(run_1("54:6C:0E:52:F3:D1"), print_value(Acc1, Acc2, Acc3))
-    #await asyncio.gather(run_1("54:6C:0E:52:F3:D1"),run_2("54:6C:0E:53:37:DA"), print_value(Acc1,Acc2,Acc3))
+    # await asyncio.gather(run_1("54:6C:0E:52:F3:D1"), print_value(Acc1, Acc2, Acc3))
+    # await asyncio.gather(run_1("54:6C:0E:52:F3:D1"),run_2("54:6C:0E:53:37:DA"), print_value(Acc1,Acc2,Acc3))
     # run the bottom function instead for multile sensors
-    await asyncio.gather(run_1("54:6C:0E:52:F3:D1"),run_2("54:6C:0E:53:37:DA"), run_3("54:6C:0E:53:37:44"), print_value(Acc1,Acc2,Acc3))
+    await asyncio.gather(
+        run_1("54:6C:0E:52:F3:D1"),
+        run_2("54:6C:0E:53:37:DA"),
+        run_3("54:6C:0E:53:37:44"),
+        print_value(Acc1, Acc2, Acc3),
+    )
 
 
 if __name__ == "__main__":
