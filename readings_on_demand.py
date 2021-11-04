@@ -9,15 +9,15 @@ Adapted by Ashwin from the following sources:
 
 """
 import asyncio
+import csv
 import math
 import platform
 import struct
-import csv
 import time
 
 from bleak import BleakClient
 
-LABEL = '1'
+LABEL = "1"
 READY = -1
 
 
@@ -39,7 +39,6 @@ class Service:
 
 
 class Sensor(Service):
-
     def callback(self, sender: int, data: bytearray):
         raise NotImplementedError()
 
@@ -53,7 +52,6 @@ class Sensor(Service):
 
 
 class MovementSensorMPU9250SubService:
-
     def __init__(self):
         self.bits = 0
 
@@ -68,11 +66,11 @@ class MovementSensorMPU9250(Sensor):
     GYRO_XYZ = 7
     ACCEL_XYZ = 7 << 3
     MAG_XYZ = 1 << 6
-    ACCEL_RANGE_2G  = 0 << 8
-    ACCEL_RANGE_4G  = 1 << 8
-    ACCEL_RANGE_8G  = 2 << 8
+    ACCEL_RANGE_2G = 0 << 8
+    ACCEL_RANGE_4G = 1 << 8
+    ACCEL_RANGE_8G = 2 << 8
     ACCEL_RANGE_16G = 3 << 8
-    scaleA = 8.0/32768.0 # TODO: why not 4.0, as documented? @Ashwin Need to verify
+    scaleA = 8.0 / 32768.0  # TODO: why not 4.0, as documented? @Ashwin Need to verify
 
     def __init__(self, address):
         super().__init__()
@@ -93,7 +91,7 @@ class MovementSensorMPU9250(Sensor):
         # listen using the handler
         await client.start_notify(self.data_uuid, self.callback)
 
-    async def onDemand(self, client,posture, *args):
+    async def onDemand(self, client, posture, *args):
         # start the sensor on the device
         await client.write_gatt_char(self.ctrl_uuid, struct.pack("<H", self.ctrlBits))
         # listen using the handler
@@ -101,18 +99,34 @@ class MovementSensorMPU9250(Sensor):
         data = await client.read_gatt_char(self.data_uuid)
         unpacked_data = struct.unpack("<hhhhhhhhh", data)
         rawA = unpacked_data[3:6]
-        accel = tuple([ v*self.scaleA for v in rawA ])
-        pitch = 180 * math.atan (accel[0]/math.sqrt(accel[1]*accel[1] + accel[2]*accel[2]))/math.pi
-        roll = 180 * math.atan (accel[2]/math.sqrt(accel[1]*accel[1] + accel[2]*accel[2]))/math.pi
-        yaw = 180 * math.atan (accel[0]/math.sqrt(accel[0]*accel[0] + accel[2]*accel[2]))/math.pi
-        print("roll: {roll}, pitch: {pitch}, yaw: {yaw}".format(roll = roll, pitch = pitch, yaw = yaw))
+        accel = tuple([v * self.scaleA for v in rawA])
+        pitch = (
+            180
+            * math.atan(accel[0] / math.sqrt(accel[1] * accel[1] + accel[2] * accel[2]))
+            / math.pi
+        )
+        roll = (
+            180
+            * math.atan(accel[2] / math.sqrt(accel[1] * accel[1] + accel[2] * accel[2]))
+            / math.pi
+        )
+        yaw = (
+            180
+            * math.atan(accel[0] / math.sqrt(accel[0] * accel[0] + accel[2] * accel[2]))
+            / math.pi
+        )
+        print(
+            "roll: {roll}, pitch: {pitch}, yaw: {yaw}".format(
+                roll=roll, pitch=pitch, yaw=yaw
+            )
+        )
         """ with open('rpy.csv', 'w', newline='') as csvfile:
             wr = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
             wr.writerow([time.strftime("%H:%M:%S"), self.add, posture, roll, pitch, yaw]) """
 
-        #await asyncio.sleep(1.0)
-        #await client.disconnect()
-        #await client.start_notify(self.data_uuid, self.callback)    
+        # await asyncio.sleep(1.0)
+        # await client.disconnect()
+        # await client.start_notify(self.data_uuid, self.callback)
 
     def callback(self, sender: int, data: bytearray):
         unpacked_data = struct.unpack("<hhhhhhhhh", data)
@@ -123,14 +137,21 @@ class MovementSensorMPU9250(Sensor):
 class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
     def __init__(self, address):
         super().__init__()
-        self.bits = MovementSensorMPU9250.ACCEL_XYZ | MovementSensorMPU9250.ACCEL_RANGE_4G | MovementSensorMPU9250.MAG_XYZ | MovementSensorMPU9250.GYRO_XYZ
-        self.scaleA = 8.0/32768.0 # TODO: why not 4.0, as documented? @Ashwin Need to verify
+        self.bits = (
+            MovementSensorMPU9250.ACCEL_XYZ
+            | MovementSensorMPU9250.ACCEL_RANGE_4G
+            | MovementSensorMPU9250.MAG_XYZ
+            | MovementSensorMPU9250.GYRO_XYZ
+        )
+        self.scaleA = (
+            8.0 / 32768.0
+        )  # TODO: why not 4.0, as documented? @Ashwin Need to verify
         self.scaleM = 4912.0 / 32760
-        self.scaleG = 500.0/65536.0
+        self.scaleG = 500.0 / 65536.0
         self.add = address
 
     def cb_sensor(self, data):
-        '''Returns (x_accel, y_accel, z_accel) in units of g'''
+        """Returns (x_accel, y_accel, z_accel) in units of g"""
         rawG = data[0:3]
         rawA = data[3:6]
         rawM = data[6:9]
@@ -141,12 +162,36 @@ class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
         elif READY == 1:
             print("Setup ready, please do your action...")
         elif READY >= 2:
-            accel = tuple([ v*self.scaleA for v in rawA ])
-            pitch = 180 * math.atan (accel[0]/math.sqrt(accel[1]*accel[1] + accel[2]*accel[2]))/math.pi
-            roll = 180 * math.atan (accel[2]/math.sqrt(accel[1]*accel[1] + accel[2]*accel[2]))/math.pi
-            yaw = 180 * math.atan(accel[0]/math.sqrt(accel[0]*accel[0] + accel[2]*accel[2]))/math.pi
-            print("[{add}] roll: {roll}, pitch: {pitch}, yaw: {yaw}".format(add = self.add, roll = roll, pitch = pitch, yaw = yaw))
-            #Add code for MQTT here
+            accel = tuple([v * self.scaleA for v in rawA])
+            pitch = (
+                180
+                * math.atan(
+                    accel[0] / math.sqrt(accel[1] * accel[1] + accel[2] * accel[2])
+                )
+                / math.pi
+            )
+            roll = (
+                180
+                * math.atan(
+                    accel[2] / math.sqrt(accel[1] * accel[1] + accel[2] * accel[2])
+                )
+                / math.pi
+            )
+            yaw = (
+                180
+                * math.atan(
+                    accel[0] / math.sqrt(accel[0] * accel[0] + accel[2] * accel[2])
+                )
+                / math.pi
+            )
+            print(
+                "[{add}] roll: {roll}, pitch: {pitch}, yaw: {yaw}".format(
+                    add=self.add, roll=roll, pitch=pitch, yaw=yaw
+                )
+            )
+            # Add code for MQTT here
+
+
 """             with open('rpy.csv', 'w', newline='') as csvfile:
                 wr = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
                 wr.writerow([time.strftime("%H:%M:%S"), self.add, roll, pitch, yaw]) """
@@ -155,11 +200,15 @@ class AllMovementSensorsMPU9250(MovementSensorMPU9250SubService):
 class AccelerometerSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
     def __init__(self):
         super().__init__()
-        self.bits = MovementSensorMPU9250.ACCEL_XYZ | MovementSensorMPU9250.ACCEL_RANGE_4G
-        self.scale = 8.0/32768.0 # TODO: why not 4.0, as documented? @Ashwin Need to verify
+        self.bits = (
+            MovementSensorMPU9250.ACCEL_XYZ | MovementSensorMPU9250.ACCEL_RANGE_4G
+        )
+        self.scale = (
+            8.0 / 32768.0
+        )  # TODO: why not 4.0, as documented? @Ashwin Need to verify
 
     def cb_sensor(self, data):
-        '''Returns (x_accel, y_accel, z_accel) in units of g'''
+        """Returns (x_accel, y_accel, z_accel) in units of g"""
         rawVals = data[3:6]
         global READY
         READY += 1
@@ -176,7 +225,12 @@ class AccelerometerSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
             #     c.write("{}\n".format(rawVals[2]))
             # wr = csv.writer(f, delimiter=' ', quoting=csv.QUOTE_MINIMAL)
             # wr.writerow(str(rawVals))
-            print(time.strftime("%H:%M:%S"), "[MovementSensor] Accelerometer:", tuple([ v*self.scale for v in rawVals ]))    
+            print(
+                time.strftime("%H:%M:%S"),
+                "[MovementSensor] Accelerometer:",
+                tuple([v * self.scale for v in rawVals]),
+            )
+
 
 class MagnetometerSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
     def __init__(self):
@@ -186,10 +240,10 @@ class MagnetometerSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
         # Reference: MPU-9250 register map v1.4
 
     def cb_sensor(self, data):
-        '''Returns (x_mag, y_mag, z_mag) in units of uT'''
+        """Returns (x_mag, y_mag, z_mag) in units of uT"""
         rawVals = data[6:9]
         global READY
-        
+
         if READY >= 2:
             # with open('./train/IndividualSignals/mag_x_train.csv','a') as a, \
             #      open('./train/IndividualSignals/mag_y_train.csv','a') as b, \
@@ -197,19 +251,20 @@ class MagnetometerSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
             #     a.write("{}\n".format(rawVals[0]))
             #     b.write("{}\n".format(rawVals[1]))
             #     c.write("{}\n".format(rawVals[2]))
-            print("[MovementSensor] Magnetometer:", tuple([ v*self.scale for v in rawVals ]))
-        
-        
+            print(
+                "[MovementSensor] Magnetometer:",
+                tuple([v * self.scale for v in rawVals]),
+            )
 
 
 class GyroscopeSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
     def __init__(self):
         super().__init__()
         self.bits = MovementSensorMPU9250.GYRO_XYZ
-        self.scale = 500.0/65536.0
+        self.scale = 500.0 / 65536.0
 
     def cb_sensor(self, data):
-        '''Returns (x_gyro, y_gyro, z_gyro) in units of degrees/sec'''
+        """Returns (x_gyro, y_gyro, z_gyro) in units of degrees/sec"""
         rawVals = data[0:3]
         global READY
         if READY >= 2:
@@ -219,9 +274,10 @@ class GyroscopeSensorMovementSensorMPU9250(MovementSensorMPU9250SubService):
             #     a.write("{}\n".format(rawVals[0]))
             #     b.write("{}\n".format(rawVals[1]))
             #     c.write("{}\n".format(rawVals[2]))
-                
-                print("[MovementSensor] Gyroscope:", tuple([ v*self.scale for v in rawVals ]))
-        
+
+            print(
+                "[MovementSensor] Gyroscope:", tuple([v * self.scale for v in rawVals])
+            )
 
 
 class OpticalSensor(Sensor):
@@ -231,7 +287,7 @@ class OpticalSensor(Sensor):
         self.ctrl_uuid = "f000aa72-0451-4000-b000-000000000000"
 
     def callback(self, sender: int, data: bytearray):
-        raw = struct.unpack('<h', data)[0]
+        raw = struct.unpack("<h", data)[0]
         m = raw & 0xFFF
         e = (raw & 0xF000) >> 12
         print("[OpticalSensor] Reading from light sensor:", 0.01 * (m << e))
@@ -244,9 +300,9 @@ class HumiditySensor(Sensor):
         self.ctrl_uuid = "f000aa22-0451-4000-b000-000000000000"
 
     def callback(self, sender: int, data: bytearray):
-        (rawT, rawH) = struct.unpack('<HH', data)
+        (rawT, rawH) = struct.unpack("<HH", data)
         temp = -40.0 + 165.0 * (rawT / 65536.0)
-        RH = 100.0 * (rawH/65536.0)
+        RH = 100.0 * (rawH / 65536.0)
         print(f"[HumiditySensor] Ambient temp: {temp}; Relative Humidity: {RH}")
 
 
@@ -259,32 +315,34 @@ class BarometerSensor(Sensor):
     def callback(self, sender: int, data: bytearray):
         global READY
         if READY >= 1:
-            (tL, tM, tH, pL, pM, pH) = struct.unpack('<BBBBBB', data)
-            temp = (tH*65536 + tM*256 + tL) / 100.0
-            press = (pH*65536 + pM*256 + pL) / 100.0
+            (tL, tM, tH, pL, pM, pH) = struct.unpack("<BBBBBB", data)
+            temp = (tH * 65536 + tM * 256 + tL) / 100.0
+            press = (pH * 65536 + pM * 256 + pL) / 100.0
             # with open('./train/IndividualSignals/baro_train.csv','a') as f:
-            #     f.write(str(press)) 
-            #     f.write('\n') 
+            #     f.write(str(press))
+            #     f.write('\n')
             # with open('./train/y_train.csv','a') as f:
-            #     f.write(LABEL) 
-            #     f.write('\n') 
-            
-            print(f"[BarometerSensor] Ambient temp: {temp}; Pressure Millibars: {press}")
+            #     f.write(LABEL)
+            #     f.write('\n')
+
+            print(
+                f"[BarometerSensor] Ambient temp: {temp}; Pressure Millibars: {press}"
+            )
 
 
 class LEDAndBuzzer(Service):
     """
-        Adapted from various sources. Src: https://evothings.com/forum/viewtopic.php?t=1514 and the original TI spec
-        from https://processors.wiki.ti.com/index.php/CC2650_SensorTag_User's_Guide#Activating_IO
+    Adapted from various sources. Src: https://evothings.com/forum/viewtopic.php?t=1514 and the original TI spec
+    from https://processors.wiki.ti.com/index.php/CC2650_SensorTag_User's_Guide#Activating_IO
 
-        Codes:
-            1 = red
-            2 = green
-            3 = red + green
-            4 = buzzer
-            5 = red + buzzer
-            6 = green + buzzer
-            7 = all
+    Codes:
+        1 = red
+        2 = green
+        3 = red + green
+        4 = buzzer
+        5 = red + buzzer
+        6 = green + buzzer
+        7 = all
     """
 
     def __init__(self):
@@ -310,7 +368,7 @@ async def connectBLE(address):
 
 async def take_reading(address, posture):
     async with BleakClient(address) as client:
-        x = await client.is_connected()    
+        x = await client.is_connected()
         print("Connected: {0}".format(x))
         acc_sensor = AccelerometerSensorMovementSensorMPU9250()
         movement_sensor = MovementSensorMPU9250(address)
@@ -330,17 +388,17 @@ async def run(address):
         cntr = 0
 
         while True:
-            # we don't want to exit the "with" block initiating the client object 
+            # we don't want to exit the "with" block initiating the client object
             # as the connection is disconnected unless the object is stored
             await asyncio.sleep(0.1)
             if cntr == 0:
                 # shine the red light
-                #await led_and_buzzer.notify(client, 0x01)
+                # await led_and_buzzer.notify(client, 0x01)
                 pass
 
             if cntr == 5:
                 # shine the green light
-                #await led_and_buzzer.notify(client, 0x02)
+                # await led_and_buzzer.notify(client, 0x02)
                 pass
 
             cntr += 1
@@ -365,20 +423,14 @@ if __name__ == "__main__":
 
     while True:
         i = input("1:Take 1 reading,2:Continuous readings, 3: Exit\n")
-        if(i == "1"):
+        if i == "1":
             posture = input("Posture type: ")
             asyncio.run(take_reading("54:6C:0E:52:F3:D1", posture))
-        elif(i == "2"):
+        elif i == "2":
             loop = asyncio.get_event_loop()
             loop.run_until_complete(main(["54:6C:0E:52:F3:D1"]))
 
-            #loop.run_until_complete(main(["54:6C:0E:52:F3:D1", address_2]))
+            # loop.run_until_complete(main(["54:6C:0E:52:F3:D1", address_2]))
             loop.run_forever()
-        elif(i =="3"):
+        elif i == "3":
             break
-
-        
-
-
-
-
