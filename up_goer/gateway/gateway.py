@@ -30,8 +30,6 @@ class Gateway:
 
             if yaws[0] == 0.0:
                 continue
-            # save_data(yaw_1,yaw_2,yaw_3)
-            print(yaws)
             functor(yaws)
 
     async def main(self, functor):
