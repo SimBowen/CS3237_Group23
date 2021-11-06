@@ -1,7 +1,10 @@
 import asyncio
+import json
+import uuid
 from typing import Callable
 
 from bleak import BleakClient
+from paho.mqtt.client import Client
 
 from up_goer.cfg import cfg
 from up_goer.ahrs.ahrs import MadgwickAHRS, get_yaw
@@ -14,8 +17,9 @@ from up_goer.cc2650.cc2650 import (
 
 
 class Gateway:
-    def __init__(self, tags: list):
+    def __init__(self, client: Client, tags: list):
         print(f"Initializing gateway with tags: {tags}")
+        self.client = client
         self.tags = tags
         self.ahrs_list = [MadgwickAHRS(cfg.SAMPLE_PERIOD, cfg.BETA) for _ in range(len(tags))]
 
@@ -30,7 +34,12 @@ class Gateway:
             if yaws[0] == 0.:
                 continue
             # save_data(yaw_1,yaw_2,yaw_3)
-            print(yaws)
+
+            data = {
+                "id": str(uuid.uuid4()),
+                "data": yaws
+            }
+            self.client.publish(cfg.CLASSIFY_TOPIC, json.dumps(data))
             functor(yaws)
 
     async def main(self, functor):

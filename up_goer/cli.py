@@ -45,9 +45,10 @@ def _functor(data: list[float]):
 # @click.option("--address2", prompt=True, type=str)
 # @click.option("--address3", prompt=True, type=str)
 def gateway():
-    gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
     mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
     mqtt_client.connect(cfg.HOST)
+    tags = [cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3]
+    gateway = Gateway(mqtt_client, tags)
     asyncio.run(gateway.main(_functor))
     mqtt_client.loop_forever()
 
