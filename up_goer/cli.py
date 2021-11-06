@@ -5,8 +5,8 @@ from bleak import BleakScanner
 
 from up_goer.cfg import cfg
 from up_goer.computer.computer import Computer
-from up_goer.csv import csv
 from up_goer.gateway.gateway import Gateway
+from up_goer.logger.logger import Logger
 from up_goer.mqtt.mqtt import create_client
 
 # TODO: Global quick hack to avoid async issues for now.
@@ -52,8 +52,5 @@ def test_shawn():
 @run.command()
 @click.option("--filename", prompt=True, type=click.Path())
 def generate_csv(filename: str):
-    def functor(data: list[float]):
-        csv.save_csv_functor(data, filename)
-
-    gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
-    asyncio.run(gateway.main(functor))
+    logger = Logger(filename)
+    logger.computer_subscriber.loop_forever()

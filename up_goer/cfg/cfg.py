@@ -27,3 +27,6 @@ GATEWAY_HOST = "localhost"
 GATEWAY_TOPIC = "posture/gateway"
 
 COMPUTER_HOST = "localhost"
+
+LOGGER_HOST = "localhost"
+LOGGER_TOPIC = "posture/logger"
