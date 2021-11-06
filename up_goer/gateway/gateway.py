@@ -28,17 +28,12 @@ class Gateway:
     ):
         while True:
             await asyncio.sleep(0.1)
-            quaternions = [ahrs.quaternion for ahrs in self.ahrs_list]
-            yaws = [get_yaw(*q) for q in quaternions]
+            yaws = [get_yaw(*ahrs.quaternion) for ahrs in self.ahrs_list]
 
             if yaws[0] == 0.:
                 continue
-            # save_data(yaw_1,yaw_2,yaw_3)
 
-            data = {
-                "id": str(uuid.uuid4()),
-                "data": yaws
-            }
+            data = {"id": str(uuid.uuid4()), "data": yaws}
             self.client.publish(cfg.CLASSIFY_TOPIC, json.dumps(data))
             functor(yaws)
 
@@ -52,19 +47,19 @@ class Gateway:
         print(f"Connecting sensor: {tag_no}")
         async with BleakClient(self.tags[tag_no]) as client:
             x = await client.is_connected()
-            print("Sensor " + str(tag_no) + " Connected: {0}".format(x))
+            print(f"Sensor {tag_no} Connected: {x}")
 
-            acc_sensor = AccelerometerSensorMovementSensorMPU9250()
-            gyro_sensor = GyroscopeSensorMovementSensorMPU9250()
-            magneto_sensor = MagnetometerSensorMovementSensorMPU9250()
-
+            sub_sensors = [
+                AccelerometerSensorMovementSensorMPU9250(),
+                GyroscopeSensorMovementSensorMPU9250(),
+                MagnetometerSensorMovementSensorMPU9250(),
+            ]
             movement_sensor = MovementSensorMPU9250()
-            movement_sensor.register(acc_sensor)
-            movement_sensor.register(gyro_sensor)
-            movement_sensor.register(magneto_sensor)
+            for sub_sensor in sub_sensors:
+                movement_sensor.register(sub_sensor)
             await movement_sensor.start_listener(client)
 
             while True:
                 await asyncio.sleep(0.1)
-                g, a, m = gyro_sensor.data, acc_sensor.data, magneto_sensor.data
-                self.ahrs_list[tag_no].update(*g, *a, *m)
+                gam = [i for s in sub_sensors for i in s.data]
+                self.ahrs_list[tag_no].update(*gam)
