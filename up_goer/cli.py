@@ -7,10 +7,6 @@ from up_goer.cfg import cfg
 from up_goer.computer.computer import Computer
 from up_goer.gateway.gateway import Gateway
 from up_goer.logger.logger import Logger
-from up_goer.mqtt.mqtt import create_client
-
-# TODO: Global quick hack to avoid async issues for now.
-mqtt_client = create_client()
 
 
 @click.group()
