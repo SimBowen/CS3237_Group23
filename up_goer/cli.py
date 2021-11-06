@@ -1,14 +1,12 @@
 import asyncio
 import json
-import os
 import uuid
-from pathlib import Path
 
-import arrow
 import click
 from bleak import BleakScanner
 
 from up_goer.cfg import cfg
+from up_goer.csv import csv
 from up_goer.gateway.gateway import Gateway
 from up_goer.mqtt.mqtt import create_client
 
@@ -45,27 +43,8 @@ def gateway():
     gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
     mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
     mqtt_client.connect(cfg.HOST)
-    #asyncio.run(gateway.main(_functor))
-    asyncio.run(gateway.main(_save_csv_functor))
+    asyncio.run(gateway.main(_functor))
     mqtt_client.loop_forever()
-
-
-def _write_csv(data: str, filename: str):
-    path = Path(filename)
-    mode = "a" if os.path.exists(path.parent) else "w"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, mode=mode) as file:
-        file.write(data)
-
-
-def _save_data(yaw_1, yaw_2, yaw_3):
-    str_time = arrow.now().timestamp()
-    yaw1 = str(yaw_1)
-    yaw2 = str(yaw_2)
-    yaw3 = str(yaw_3)
-    data = ",".join([str_time, yaw1, yaw2, yaw3])
-    data = f"\n{data}"
-    _write_csv(data, "data.csv")
 
 
 def listen_mqtt():
@@ -74,14 +53,11 @@ def listen_mqtt():
     mqtt_client.loop_forever()
 
 
-# TODO: Quick hack for Xin Ming to run without poetry
-if __name__ == "__main__":
-     gateway()
+@run.command()
+@click.option("--filename", prompt=True, type=click.Path())
+def generate_csv(filename: str):
+    def functor(data: list[float]):
+        csv.save_csv_functor(data, filename)
 
-
-def _save_csv_functor(data: list[float]):
-    time = arrow.now().timestamp()
-    stringified_data = list(map(lambda x: str(x), data))
-    stringified_data.insert(0, str(time))
-    output = ",".join(stringified_data)
-    _write_csv(output + "\n", "data.csv")
+    gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
+    asyncio.run(gateway.main(functor))
