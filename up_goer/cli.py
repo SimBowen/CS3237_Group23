@@ -3,6 +3,8 @@ import asyncio
 import click
 from bleak import BleakScanner
 
+from up_goer.sensors import client
+
 
 @click.group()
 def run():
@@ -18,3 +20,9 @@ async def _discover():
 @run.command()
 def discover():
     asyncio.run(_discover())
+
+
+@run.command()
+def start():
+    client.connect("localhost")
+    client.loop_forever()
