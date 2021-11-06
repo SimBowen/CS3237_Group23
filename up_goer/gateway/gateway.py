@@ -1,15 +1,15 @@
 import asyncio
 from typing import Callable
 
+import arrow
 from bleak import BleakClient
 from up_goer.ahrs.ahrs import MadgwickAHRS, get_yaw
-from up_goer.cc2650.cc2650 import (
-    AccelerometerSensorMovementSensorMPU9250,
-    GyroscopeSensorMovementSensorMPU9250,
-    MagnetometerSensorMovementSensorMPU9250,
-    MovementSensorMPU9250,
-)
+from up_goer.cc2650.cc2650 import (AccelerometerSensorMovementSensorMPU9250,
+                                   GyroscopeSensorMovementSensorMPU9250,
+                                   MagnetometerSensorMovementSensorMPU9250,
+                                   MovementSensorMPU9250)
 from up_goer.cfg import cfg
+from up_goer.core.data_structures import MovementSensorData, SensorData
 
 
 class Gateway:
@@ -56,5 +56,10 @@ class Gateway:
 
             while True:
                 await asyncio.sleep(0.1)
+                timestamp = arrow.now("+08:00").timestamp()
+                gyro_data = SensorData(*gyro_sensor.data)
+                acc_data = SensorData(*acc_sensor.data)
+                magneto_data = SensorData(*magneto_sensor.data)
+                data = MovementSensorData(timestamp, gyro_data, acc_data, magneto_data)
                 g, a, m = gyro_sensor.data, acc_sensor.data, magneto_sensor.data
                 self.ahrs_list[tag_no].update(*g, *a, *m)

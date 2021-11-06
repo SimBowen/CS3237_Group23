@@ -6,10 +6,17 @@ from enum import Enum
 
 @dataclass(frozen=True)
 class SensorData:
+    x: float
+    y: float
+    z: float
+
+
+@dataclass(frozen=True)
+class MovementSensorData:
     timestamp: float
-    accelerometer: list[int]
-    gyroscope: list[int]
-    magnetometer: list[int]
+    gyroscope: SensorData
+    accelerometer: SensorData
+    magnetometer: SensorData
 
 
 class Prediction(Enum):
