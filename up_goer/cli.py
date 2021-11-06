@@ -47,12 +47,6 @@ def gateway():
     mqtt_client.loop_forever()
 
 
-def listen_mqtt():
-    mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
-    mqtt_client.connect(cfg.HOST)
-    mqtt_client.loop_forever()
-
-
 @run.command()
 @click.option("--filename", prompt=True, type=click.Path())
 def generate_csv(filename: str):
