@@ -2,8 +2,6 @@ import asyncio
 from typing import Callable
 
 from bleak import BleakClient
-
-from up_goer.cfg import cfg
 from up_goer.ahrs.ahrs import MadgwickAHRS, get_yaw
 from up_goer.cc2650.cc2650 import (
     AccelerometerSensorMovementSensorMPU9250,
@@ -11,13 +9,16 @@ from up_goer.cc2650.cc2650 import (
     MagnetometerSensorMovementSensorMPU9250,
     MovementSensorMPU9250,
 )
+from up_goer.cfg import cfg
 
 
 class Gateway:
     def __init__(self, tags: list):
         print(f"Initializing gateway with tags: {tags}")
         self.tags = tags
-        self.ahrs_list = [MadgwickAHRS(cfg.SAMPLE_PERIOD, cfg.BETA) for _ in range(len(tags))]
+        self.ahrs_list = [
+            MadgwickAHRS(cfg.SAMPLE_PERIOD, cfg.BETA) for _ in range(len(tags))
+        ]
 
     async def output_data(
         self, functor: Callable[[[float, float, float]], None] = None
@@ -27,7 +28,7 @@ class Gateway:
             quaternions = [ahrs.quaternion for ahrs in self.ahrs_list]
             yaws = [get_yaw(*q) for q in quaternions]
 
-            if yaws[0] == 0.:
+            if yaws[0] == 0.0:
                 continue
             # save_data(yaw_1,yaw_2,yaw_3)
             print(yaws)
