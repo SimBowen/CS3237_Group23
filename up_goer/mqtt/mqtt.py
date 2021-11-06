@@ -8,7 +8,7 @@ from dotenv import dotenv_values
 
 HOST = "xinming.ddns.net"
 USER = "guest"
-PASSWORD = dotenv_values["SERVER_PASSWORD"]
+PASSWORD = dotenv_values()["SERVER_PASSWORD"]
 PREDICT_TOPIC = "posture/predict"
 CLASSIFY_TOPIC = "posture/classify"
 
@@ -25,13 +25,13 @@ class Mock(Enum):
 
 @dataclass(frozen=True)
 class ClassifyingData:
-    id = uuid.uuid()
+    id = uuid.uuid4()
     data: list[float]
 
 
 @dataclass(frozen=True)
 class PredictingData:
-    id = uuid.uuid()
+    id: str
     prediction: Prediction
     """Confidence level, if available"""
     score: float or None
@@ -45,7 +45,9 @@ def on_connect(client: mqtt.Client, userdata, flags, result_code):
 
 
 def on_message(client: mqtt.Client, userdata, message):
-    click.echo(f"on_message {message.payload.decode()}")
+    predicting_data = message.payload.decode()
+    predicting_data = PredictingData(**predicting_data)
+    click.echo(predicting_data)
 
 
 def create_client() -> mqtt.Client():
