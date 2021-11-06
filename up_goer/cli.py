@@ -45,8 +45,8 @@ def gateway():
     gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
     mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
     mqtt_client.connect(cfg.HOST)
-    asyncio.run(gateway.main(_functor))
-    # asyncio.run(gateway.main(_save_csv_functor))
+    #asyncio.run(gateway.main(_functor))
+    asyncio.run(gateway.main(_save_csv_functor))
     mqtt_client.loop_forever()
 
 
@@ -75,8 +75,8 @@ def listen_mqtt():
 
 
 # TODO: Quick hack for Xin Ming to run without poetry
-# if __name__ == "__main__":
-#     gateway()
+if __name__ == "__main__":
+     gateway()
 
 
 def _save_csv_functor(data: list[float]):
