@@ -30,6 +30,7 @@ class Computer:
         ]
         yaws = [get_yaw(*q) for q in quaternions]
 
+        # TODO: Why skip first yaw?
         if yaws[0] == 0.0:
             return
 
