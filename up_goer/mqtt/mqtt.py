@@ -1,3 +1,4 @@
+import json
 import uuid
 from dataclasses import dataclass
 from enum import Enum
@@ -39,8 +40,17 @@ def on_connect(client: mqtt.Client, userdata, flags, result_code):
 
 
 def on_message(client: mqtt.Client, userdata, message):
+    if message.topic != PREDICT_TOPIC:
+        return
+
     predicting_data = message.payload.decode()
-    predicting_data = PredictingData(**predicting_data)
+    predicting_data = json.loads(predicting_data)
+    predicting_data = PredictingData(
+        id=predicting_data["id"],
+        prediction=Prediction(predicting_data["prediction"]),
+        score=predicting_data["score"],
+        mock=predicting_data["mock"],
+    )
     click.echo(predicting_data)
 
 

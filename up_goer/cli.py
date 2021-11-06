@@ -41,9 +41,6 @@ def _functor(data: list[float]):
 
 
 @run.command()
-# @click.option("--address1", prompt=True, type=str)
-# @click.option("--address2", prompt=True, type=str)
-# @click.option("--address3", prompt=True, type=str)
 def gateway():
     gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
     mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
@@ -70,5 +67,12 @@ def _save_data(yaw_1, yaw_2, yaw_3):
     _write_csv(data, "data.csv")
 
 
+def listen_mqtt():
+    mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
+    mqtt_client.connect(cfg.HOST)
+    mqtt_client.loop_forever()
+
+
+# TODO: Quick hack for Xin Ming to run without poetry
 if __name__ == "__main__":
     gateway()
