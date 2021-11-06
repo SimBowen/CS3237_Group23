@@ -15,9 +15,10 @@ import platform
 import struct
 import time
 from pathlib import Path
+from typing import Callable
 
-from ahrs import MadgwickAHRS, euler_from_quaternion
 from bleak import BleakClient
+from up_goer.ahrs.ahrs import MadgwickAHRS, euler_from_quaternion
 
 
 class Service:
@@ -210,7 +211,7 @@ def save_data(yaw_1, yaw_2, yaw_3):
     write_csv(data, "data.csv")
 
 
-async def output_data():
+async def output_data(functor: Callable[[[float, float, float]], None] = None):
     while True:
         await asyncio.sleep(0.1)
         yaw_1 = get_yaw(*AHRS1.quaternion)
@@ -221,12 +222,13 @@ async def output_data():
             continue
         # save_data(yaw_1,yaw_2,yaw_3)
         print([yaw_1, yaw_2, yaw_3])
+        functor([yaw_1, yaw_2, yaw_3])
 
 
-async def main():
+async def main(functor):
     await asyncio.gather(
         run("54:6C:0E:52:F3:D1", 1),
         run("54:6C:0E:53:37:DA", 2),
         run("54:6C:0E:53:37:44", 3),
-        output_data(),
+        output_data(functor),
     )
