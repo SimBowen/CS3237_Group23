@@ -9,5 +9,6 @@ SERVER_PASSWORD=PASSWORD
 ```
 
 ## Usage
-* To start the gateway, execute `poetry run up_goer gateway`
 * To discover bluetooth addresses, execute `poetry run up_goer discover`
+* To start the gateway, execute `poetry run up_goer gateway`
+* To start the computer, execute `poetry run up_goer computer`

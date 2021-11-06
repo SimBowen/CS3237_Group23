@@ -1,11 +1,10 @@
 import asyncio
-import json
-import uuid
 
 import click
 from bleak import BleakScanner
 
 from up_goer.cfg import cfg
+from up_goer.computer.computer import Computer
 from up_goer.csv import csv
 from up_goer.gateway.gateway import Gateway
 from up_goer.mqtt.mqtt import create_client
@@ -30,21 +29,24 @@ def discover():
     asyncio.run(_discover())
 
 
-def _functor(data: list[float]):
-    data = {
-        "id": str(uuid.uuid4()),
-        "data": data,
-    }
-    mqtt_client.publish(cfg.CLASSIFY_TOPIC, json.dumps(data))
-
-
 @run.command()
 def gateway():
     gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
-    mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
-    mqtt_client.connect(cfg.HOST)
-    asyncio.run(gateway.main(_functor))
-    mqtt_client.loop_forever()
+    asyncio.run(gateway.main())
+
+
+@run.command()
+def computer():
+    computer = Computer()
+    computer.gateway_subscriber.loop_forever()
+
+
+@run.command()
+def test_shawn():
+    # Tag 3
+    address = "6D0713AD-8093-474D-AC67-3BAFE1D2757A"
+    gateway = Gateway([address])
+    asyncio.run(gateway.main())
 
 
 @run.command()

@@ -23,4 +23,7 @@ TAG_ADDRESS_4 = get_tag_address(
 SAMPLE_PERIOD = 1 / 10
 BETA = 2.5
 
-SENSOR_TOPIC = "posture/sensor"
+GATEWAY_HOST = "localhost"
+GATEWAY_TOPIC = "posture/gateway"
+
+COMPUTER_HOST = "localhost"

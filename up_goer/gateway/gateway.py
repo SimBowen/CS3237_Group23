@@ -1,7 +1,9 @@
 import asyncio
 
 import arrow
+import click
 from bleak import BleakClient
+from paho.mqtt.client import Client
 from up_goer.cc2650.cc2650 import (
     AccelerometerSensorMovementSensorMPU9250,
     GyroscopeSensorMovementSensorMPU9250,
@@ -9,20 +11,23 @@ from up_goer.cc2650.cc2650 import (
     MovementSensorMPU9250,
 )
 from up_goer.cfg import cfg
-from up_goer.core.data_structures import SensorData, SensorTagData
+from up_goer.core.data_structures import GatewayData, SensorData, SensorTagData
 
 
 class Gateway:
-    def __init__(self, tags: list):
-        print(f"Initializing gateway with tags: {tags}")
+    def __init__(self, sensor_tags: list):
+        print(f"Initializing gateway with tags: {sensor_tags}")
         # TODO: hacky way to pass data from while true loop
         self.sensor_tags = dict[str, SensorTagData or None]()
-        for address in tags:
+        for address in sensor_tags:
             self.sensor_tags[address] = None
 
-    async def main(self, functor):
+        self.computer_publisher = Client()
+        self.computer_publisher.connect(cfg.COMPUTER_HOST)
+
+    async def main(self):
         await asyncio.gather(
-            *[self.connect(i) for i in range(len(self.tags))],
+            *[self.connect(address) for address in self.sensor_tags.keys()],
             self.output_data(),
         )
 
@@ -30,7 +35,7 @@ class Gateway:
         print(f"Connecting sensor: {address}")
         async with BleakClient(address) as client:
             x = await client.is_connected()
-            print("Sensor " + address + " Connected: {0}".format(x))
+            click.echo(f"Sensor {address} Connected: {x}")
 
             acc_sensor = AccelerometerSensorMovementSensorMPU9250()
             gyro_sensor = GyroscopeSensorMovementSensorMPU9250()
@@ -56,6 +61,8 @@ class Gateway:
     async def output_data(self):
         while True:
             await asyncio.sleep(0.1)
-            for address, data in self.sensor_tags.items():
-                pass
-            # TODO: Publish to mqtt
+            if None in self.sensor_tags.values():
+                continue
+            payload = GatewayData(list(self.sensor_tags.values()))
+            payload = payload.to_json().encode()
+            self.computer_publisher.publish(cfg.GATEWAY_TOPIC, payload=payload)

@@ -1,5 +1,5 @@
 import uuid
-from dataclasses import dataclass
+from dataclasses import astuple, dataclass
 from enum import Enum
 
 from dataclasses_json import dataclass_json
@@ -12,6 +12,9 @@ class SensorData:
     y: float
     z: float
 
+    def __iter__(self):
+        return iter(astuple(self))
+
 
 @dataclass_json
 @dataclass(frozen=True)
@@ -21,6 +24,12 @@ class SensorTagData:
     gyroscope: SensorData
     accelerometer: SensorData
     magnetometer: SensorData
+
+
+@dataclass_json
+@dataclass(frozen=True)
+class GatewayData:
+    sensor_tags: list[SensorTagData]
 
 
 # TODO: Override (de)serialisation
