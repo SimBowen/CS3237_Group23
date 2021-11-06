@@ -10,11 +10,13 @@ Adapted by Ashwin from the following sources:
 """
 import asyncio
 import csv
+import json
 import math
 import os
 import platform
 import struct
 import time
+import uuid
 from pathlib import Path
 
 import paho.mqtt.client as mqtt
@@ -417,9 +419,11 @@ async def print_value(sensor1, sensor2, sensor3):
         data = f"\n{data}"
         if not data:
             continue
-        client.publish(
-            CLASSIFY_TOPIC, ClassifyingData([sensor1.roll, sensor2.roll, sensor3.roll])
-        )
+        data = {
+            "id": str(uuid.uuid4()),
+            "data": [sensor1.roll, sensor2.roll, sensor3.roll],
+        }
+        client.publish(CLASSIFY_TOPIC, json.dumps(data))
         print(f"roll_1: {sensor1.roll}, roll_2: {sensor2.roll}, roll_3: {sensor3.roll}")
         await asyncio.sleep(1)
         # Can mqtt from here, values are sensor1.pitch, sensor2.pitch and sensor3.pitch
