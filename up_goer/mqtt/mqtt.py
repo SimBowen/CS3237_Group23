@@ -4,13 +4,7 @@ from enum import Enum
 
 import click
 import paho.mqtt.client as mqtt
-from dotenv import dotenv_values
-
-HOST = "xinming.ddns.net"
-USER = "guest"
-PASSWORD = dotenv_values()["SERVER_PASSWORD"]
-PREDICT_TOPIC = "posture/predict"
-CLASSIFY_TOPIC = "posture/classify"
+from up_goer.cfg.cfg import CLASSIFY_TOPIC, PREDICT_TOPIC
 
 
 class Prediction(Enum):
