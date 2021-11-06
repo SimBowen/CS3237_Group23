@@ -23,7 +23,10 @@ def discover():
 
 
 @run.command()
-def gateway():
+@click.option("--address1", prompt=True, type=str)
+@click.option("--address2", prompt=True, type=str)
+@click.option("--address3", prompt=True, type=str)
+def gateway(address1: str, address2: str, address3: str):
     client.connect("localhost")
     asyncio.run(main())
     client.loop_forever()
