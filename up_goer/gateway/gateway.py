@@ -2,6 +2,8 @@ import asyncio
 from typing import Callable
 
 from bleak import BleakClient
+
+from up_goer.cfg import cfg
 from up_goer.ahrs.ahrs import MadgwickAHRS, get_yaw
 from up_goer.cc2650.cc2650 import (
     AccelerometerSensorMovementSensorMPU9250,
@@ -12,38 +14,36 @@ from up_goer.cc2650.cc2650 import (
 
 
 class Gateway:
-    def __init__(self):
-        self.ahrs1 = MadgwickAHRS(1 / 10, 3)
-        self.ahrs2 = MadgwickAHRS(1 / 10, 3)
-        self.ahrs3 = MadgwickAHRS(1 / 10, 3)
+    def __init__(self, tags: list):
+        print(f"Initializing gateway with tags: {tags}")
+        self.tags = tags
+        self.ahrs_list = [MadgwickAHRS(cfg.SAMPLE_PERIOD, cfg.BETA) for _ in range(len(tags))]
 
     async def output_data(
         self, functor: Callable[[[float, float, float]], None] = None
     ):
         while True:
             await asyncio.sleep(0.1)
-            yaw_1 = get_yaw(*self.ahrs1.quaternion)
-            yaw_2 = get_yaw(*self.ahrs2.quaternion)
-            yaw_3 = get_yaw(*self.ahrs3.quaternion)
+            quaternions = [ahrs.quaternion for ahrs in self.ahrs_list]
+            yaws = [get_yaw(*q) for q in quaternions]
 
-            if yaw_1 == 0.00:
+            if yaws[0] == 0.:
                 continue
             # save_data(yaw_1,yaw_2,yaw_3)
-            print([yaw_1, yaw_2, yaw_3])
-            functor([yaw_1, yaw_2, yaw_3])
+            print(yaws)
+            functor(yaws)
 
     async def main(self, functor):
         await asyncio.gather(
-            self.run("54:6C:0E:52:F3:D1", 1),
-            self.run("54:6C:0E:53:37:DA", 2),
-            self.run("54:6C:0E:53:37:44", 3),
+            *[self.run(i) for i in range(len(self.tags))],
             self.output_data(functor),
         )
 
-    async def run(self, address, tag):
-        async with BleakClient(address) as client:
+    async def run(self, tag_no):
+        print(f"Connecting sensor: {tag_no}")
+        async with BleakClient(self.tags[tag_no]) as client:
             x = await client.is_connected()
-            print("Sensor " + str(tag) + " Connected: {0}".format(x))
+            print("Sensor " + str(tag_no) + " Connected: {0}".format(x))
 
             acc_sensor = AccelerometerSensorMovementSensorMPU9250()
             gyro_sensor = GyroscopeSensorMovementSensorMPU9250()
@@ -58,9 +58,4 @@ class Gateway:
             while True:
                 await asyncio.sleep(0.1)
                 g, a, m = gyro_sensor.data, acc_sensor.data, magneto_sensor.data
-                if tag == 1:
-                    self.ahrs1.update(*g, *a, *m)
-                elif tag == 2:
-                    self.ahrs2.update(*g, *a, *m)
-                elif tag == 3:
-                    self.ahrs3.update(*g, *a, *m)
+                self.ahrs_list[tag_no].update(*g, *a, *m)

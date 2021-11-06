@@ -8,7 +8,7 @@ from pathlib import Path
 import click
 from bleak import BleakScanner
 
-from up_goer.cfg.cfg import CLASSIFY_TOPIC
+from up_goer.cfg import cfg
 from up_goer.gateway.gateway import Gateway
 from up_goer.mqtt.mqtt import create_client
 
@@ -37,16 +37,17 @@ def _functor(data: list[float]):
         "id": str(uuid.uuid4()),
         "data": data,
     }
-    mqtt_client.publish(CLASSIFY_TOPIC, json.dumps(data))
+    mqtt_client.publish(cfg.CLASSIFY_TOPIC, json.dumps(data))
 
 
 @run.command()
-@click.option("--address1", prompt=True, type=str)
-@click.option("--address2", prompt=True, type=str)
-@click.option("--address3", prompt=True, type=str)
-def gateway(address1: str, address2: str, address3: str):
-    gateway = Gateway()
-    mqtt_client.connect("localhost")
+# @click.option("--address1", prompt=True, type=str)
+# @click.option("--address2", prompt=True, type=str)
+# @click.option("--address3", prompt=True, type=str)
+def gateway():
+    gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
+    mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
+    mqtt_client.connect(cfg.HOST)
     asyncio.run(gateway.main(_functor))
     mqtt_client.loop_forever()
 
@@ -67,3 +68,7 @@ def _save_data(yaw_1, yaw_2, yaw_3):
     data = ",".join([str_time, yaw1, yaw2, yaw3])
     data = f"\n{data}"
     _write_csv(data, "data.csv")
+
+
+if __name__ == "__main__":
+    gateway()
