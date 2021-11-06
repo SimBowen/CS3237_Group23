@@ -9,4 +9,5 @@ SERVER_PASSWORD=PASSWORD
 ```
 
 ## Usage
-To activate the CLI, execute `poetry run up_goer`
+* To start the gateway, execute `poetry run up_goer gateway`
+* To discover bluetooth addresses, execute `poetry run up_goer discover`

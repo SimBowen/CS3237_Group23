@@ -23,7 +23,7 @@ def discover():
 
 
 @run.command()
-def start():
+def gateway():
     client.connect("localhost")
     asyncio.run(main())
     client.loop_forever()
