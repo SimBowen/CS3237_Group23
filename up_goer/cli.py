@@ -1,10 +1,10 @@
 import asyncio
 import json
 import os
-import time
 import uuid
 from pathlib import Path
 
+import arrow
 import click
 from bleak import BleakScanner
 
@@ -40,15 +40,6 @@ def _functor(data: list[float]):
     mqtt_client.publish(cfg.CLASSIFY_TOPIC, json.dumps(data))
 
 
-def _save_csv_functor(data: list[float]):
-    data = {
-        "id": str(uuid.uuid4()),
-        "data": data,
-    }
-    data = json.dumps(data)
-    _write_csv(data + "\n", "data.csv")
-
-
 @run.command()
 def gateway():
     gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
@@ -68,7 +59,7 @@ def _write_csv(data: str, filename: str):
 
 
 def _save_data(yaw_1, yaw_2, yaw_3):
-    str_time = time.strftime("%H:%M:%S")
+    str_time = arrow.now().timestamp()
     yaw1 = str(yaw_1)
     yaw2 = str(yaw_2)
     yaw3 = str(yaw_3)
@@ -84,5 +75,13 @@ def listen_mqtt():
 
 
 # TODO: Quick hack for Xin Ming to run without poetry
-if __name__ == "__main__":
-    gateway()
+# if __name__ == "__main__":
+#     gateway()
+
+
+def _save_csv_functor(data: list[float]):
+    time = arrow.now().timestamp()
+    stringified_data = list(map(lambda x: str(x), data))
+    stringified_data.insert(0, str(time))
+    output = ",".join(stringified_data)
+    _write_csv(output + "\n", "data.csv")
