@@ -46,7 +46,7 @@ def _save_csv_functor(data: list[float]):
         "data": data,
     }
     data = json.dumps(data)
-    _write_csv(data, "data.csv")
+    _write_csv(data + "\n", "data.csv")
 
 
 @run.command()
