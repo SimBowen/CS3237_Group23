@@ -4,6 +4,14 @@ from dataclasses import dataclass
 from enum import Enum
 
 
+@dataclass(frozen=True)
+class SensorData:
+    timestamp: float
+    accelerometer: list[int]
+    gyroscope: list[int]
+    magnetometer: list[int]
+
+
 class Prediction(Enum):
     BAD = 0
     GOOD = 1
