@@ -40,12 +40,22 @@ def _functor(data: list[float]):
     mqtt_client.publish(cfg.CLASSIFY_TOPIC, json.dumps(data))
 
 
+def _save_csv_functor(data: list[float]):
+    data = {
+        "id": str(uuid.uuid4()),
+        "data": data,
+    }
+    data = json.dumps(data)
+    _write_csv(data, "data.csv")
+
+
 @run.command()
 def gateway():
     gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
     mqtt_client.username_pw_set(cfg.USER, cfg.PASSWORD)
     mqtt_client.connect(cfg.HOST)
     asyncio.run(gateway.main(_functor))
+    # asyncio.run(gateway.main(_save_csv_functor))
     mqtt_client.loop_forever()
 
 
