@@ -1,6 +1,8 @@
 import asyncio
+from os import name
+from pathlib import Path
 
-import click
+import typer
 from bleak import BleakScanner
 
 from up_goer.cfg import cfg
@@ -8,10 +10,9 @@ from up_goer.computer.computer import Computer
 from up_goer.gateway.gateway import Gateway
 from up_goer.logger.logger import Logger
 
-
-@click.group()
-def run():
-    pass
+app = typer.Typer()
+gateway = typer.Typer()
+app.add_typer(gateway, name="gateway")
 
 
 async def _discover():
@@ -20,33 +21,34 @@ async def _discover():
         print(d)
 
 
-@run.command()
+@app.command()
 def discover():
     asyncio.run(_discover())
 
 
-@run.command()
-def gateway():
+@gateway.command(name="all")
+def gateway_all():
     gateway = Gateway([cfg.TAG_ADDRESS_1, cfg.TAG_ADDRESS_2, cfg.TAG_ADDRESS_3])
     asyncio.run(gateway.main())
 
 
-@run.command()
+@gateway.command(name="single")
+def gateway_single(address: str):
+    gateway = Gateway([address])
+    asyncio.run(gateway.main())
+
+
+@app.command()
 def computer():
     computer = Computer()
     computer.gateway_subscriber.loop_forever()
 
 
-@run.command()
-def test_shawn():
-    # Tag 3
-    address = "6D0713AD-8093-474D-AC67-3BAFE1D2757A"
-    gateway = Gateway([address])
-    asyncio.run(gateway.main())
-
-
-@run.command()
-@click.option("--filename", prompt=True, type=click.Path())
-def generate_csv(filename: str):
+@app.command()
+def generate_csv(filename: Path):
     logger = Logger(filename)
     logger.computer_subscriber.loop_forever()
+
+
+if __name__ == "__main__":
+    app()

@@ -5,16 +5,16 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.scripts]
-up_goer = "up_goer.cli:run"
+up_goer = "up_goer.cli:app"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
 bleak = "^0.13.0"
 paho-mqtt = "^1.6.1"
 python-dotenv = "^0.19.1"
-click = "^8.0.3"
 arrow = "^1.2.1"
 dataclasses-json = "^0.5.6"
+typer = {extras = ["all"], version = "^0.4.0"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
