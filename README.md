@@ -13,3 +13,11 @@ SERVER_PASSWORD=PASSWORD
 * To start the gateway, execute `poetry run up_goer gateway`
 * To start the computer, execute `poetry run up_goer computer`
 * To start the logger, execute `poetry run up_goer logger`
+
+## Optional setup to eliminate poetry run
+1. Install [direnv](https://github.com/direnv/direnv)
+2. Createa  .envrc file with
+```
+layout python
+```
+Now you can call up_goer <command>
