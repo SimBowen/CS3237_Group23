@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "up_goer"
+name = "up-goer"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.scripts]
-up_goer = "up_goer.cli:app"
+up-goer = "up_goer.cli:app"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
