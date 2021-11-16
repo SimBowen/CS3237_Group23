@@ -15,6 +15,9 @@ class SensorData:
     def __iter__(self):
         return iter(astuple(self))
 
+    def is_valid(self):
+        return self.x != 0 and self.y != 0 and self.z != 0
+
 
 @dataclass_json
 @dataclass(frozen=True)
@@ -24,6 +27,11 @@ class SensorTagData:
     gyroscope: SensorData
     accelerometer: SensorData
     magnetometer: SensorData
+
+    def is_valid(self):
+        return self.gyroscope.is_valid() \
+               and self.accelerometer.is_valid() \
+               and self.magnetometer.is_valid()
 
 
 @dataclass_json

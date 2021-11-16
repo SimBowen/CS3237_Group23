@@ -8,17 +8,8 @@ Adapted by Ashwin from the following sources:
  - https://github.com/hbldh/bleak/blob/develop/examples/sensortag.py
 
 """
-import asyncio
 import math
-import os
-import platform
 import struct
-import time
-from pathlib import Path
-from typing import Callable
-
-from bleak import BleakClient
-from up_goer.ahrs.ahrs import MadgwickAHRS, euler_from_quaternion
 
 
 class Service:

@@ -1,4 +1,3 @@
-import dotenv
 from dotenv import dotenv_values
 from up_goer.utils.utils import get_tag_address
 
