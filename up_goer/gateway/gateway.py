@@ -47,8 +47,11 @@ class Gateway:
             movement_sensor.register(magneto_sensor)
             await movement_sensor.start_listener(client)
 
+            init = False
             while True:
                 await asyncio.sleep(0.1)
+                if not await client.is_connected():
+                    raise ConnectionError()
                 timestamp = arrow.now("+08:00").timestamp()
                 gyro_data = SensorData(*gyro_sensor.data)
                 acc_data = SensorData(*acc_sensor.data)
@@ -56,6 +59,13 @@ class Gateway:
                 data = SensorTagData(
                     client.address, timestamp, gyro_data, acc_data, magneto_data
                 )
+
+                # Check for initial invalid data
+                if not init:
+                    if not data.is_valid():
+                        continue
+                    init = True
+
                 self.sensor_tags[client.address] = data
 
     async def output_data(self):
