@@ -55,12 +55,17 @@ class Mock(Enum):
 
 
 @dataclass_json
-@dataclass(frozen=True)
+@dataclass(init=False)
 class ClassifyingData:
-    id = uuid.uuid4()
     data: list[float]
+    id: uuid.UUID
+
+    def __init__(self, data):
+        self.data = data
+        self.id = uuid.uuid4()
 
 
+@dataclass_json
 @dataclass(frozen=True)
 class PredictingData:
     id: str
