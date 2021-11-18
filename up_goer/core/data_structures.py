@@ -29,9 +29,11 @@ class SensorTagData:
     magnetometer: SensorData
 
     def is_valid(self):
-        return self.gyroscope.is_valid() \
-               and self.accelerometer.is_valid() \
-               and self.magnetometer.is_valid()
+        return (
+            self.gyroscope.is_valid()
+            and self.accelerometer.is_valid()
+            and self.magnetometer.is_valid()
+        )
 
 
 @dataclass_json
