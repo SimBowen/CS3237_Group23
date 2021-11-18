@@ -9,6 +9,7 @@ from up_goer.cfg import cfg
 from up_goer.computer.computer import Computer
 from up_goer.gateway.gateway import Gateway
 from up_goer.logger.logger import Logger
+from up_goer.spammer.spammer import Spammer
 
 app = typer.Typer()
 gateway = typer.Typer()
@@ -48,6 +49,11 @@ def computer():
 def generate_csv(filename: Path):
     logger = Logger(filename)
     logger.computer_subscriber.loop_forever()
+
+@app.command()
+def spam_server(filename: Path):
+	spammer = Spammer()
+	spammer.blast(filename)
 
 
 if __name__ == "__main__":
