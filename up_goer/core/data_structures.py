@@ -42,13 +42,11 @@ class GatewayData:
     sensor_tags: list[SensorTagData]
 
 
-# TODO: Override (de)serialisation
 class Prediction(Enum):
     BAD = 0
     GOOD = 1
 
 
-# TODO: Override (de)serialisation
 class Mock(Enum):
     REAL = 0
     MOCKED = 1
