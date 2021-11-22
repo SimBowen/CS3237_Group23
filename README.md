@@ -46,3 +46,8 @@ layout python
 ```
 
 3. execute `direnv allow`
+
+## Incompatibilities
+
+- MacOS Monterery is currently not supported due to https://github.com/hbldh/bleak/issues/635.
+- If you're running a M1 chip, you will not be able to install the dependencies using poetry. Instead, manually add each of the dependencies using [pip](https://pypi.org/project/pip/)
