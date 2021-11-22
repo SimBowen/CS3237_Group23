@@ -3,7 +3,9 @@
 We externalise your sense of posture so that you can lead a healthier, less painful life.
 
 We do this by providing a real-time feedback of your posture.
+
 Simply wear a vest that comes equipped with 3 CC2650STK sensor tags and enjoy a real-time feed of your posture.
+
 When your posture is less than ideal, we prompt you with a blaring red flag.
 
 ## Usage
