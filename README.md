@@ -9,5 +9,16 @@ SERVER_PASSWORD=PASSWORD
 ```
 
 ## Usage
-* To start the gateway, execute `poetry run up_goer gateway`
-* To discover bluetooth addresses, execute `poetry run up_goer discover`
+* To discover bluetooth addresses, execute `poetry run up-goer discover`
+* To start the gateway, execute `poetry run up-goer gateway`
+* To start the computer, execute `poetry run up-goer computer`
+* To start the logger, execute `poetry run up-goer logger`
+
+## Optional setup to eliminate poetry run
+1. Install [direnv](https://github.com/direnv/direnv)
+2. Create a .envrc file with
+```
+layout python
+```
+3. execute `direnv allow`
+Now you can call `up-goer <command>`

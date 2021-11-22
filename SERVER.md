@@ -1,18 +1,23 @@
 # Mqtt Protocol For Posture Prediction
 
 ## Classifying
+
 **Data**
+
 ```json
 {
   "id": "a6b32309-35e9-4a0e-91db-0d0cfe75c1de",
   "data": [80.2, 90.3, 109.1]
 }
 ```
+
 Use `uuid.uuid4()` to generate unique id
 Sequence of data is important
 
 ## Predicting
+
 **Data**
+
 ```json
 {
   "id": "a6b32309-35e9-4a0e-91db-0d0cfe75c1de",
@@ -21,6 +26,7 @@ Sequence of data is important
   "mock": 1
 }
 ```
+
 `"prediction": 0` Bad Posture
 
 `"prediction": 1` Good Posture
@@ -32,6 +38,7 @@ Sequence of data is important
 `"score"` Confidence level, if available
 
 ## MQTT Config
+
 ```python
 HOST = 'xinming.ddns.net'
 USER = 'guest'

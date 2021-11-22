@@ -1,8 +1,9 @@
 import asyncio
-from typing import Callable
 
+import arrow
+import click
 from bleak import BleakClient
-from up_goer.ahrs.ahrs import MadgwickAHRS, get_yaw
+from paho.mqtt.client import Client
 from up_goer.cc2650.cc2650 import (
     AccelerometerSensorMovementSensorMPU9250,
     GyroscopeSensorMovementSensorMPU9250,
@@ -10,41 +11,31 @@ from up_goer.cc2650.cc2650 import (
     MovementSensorMPU9250,
 )
 from up_goer.cfg import cfg
+from up_goer.core.data_structures import GatewayData, SensorData, SensorTagData
 
 
 class Gateway:
-    def __init__(self, tags: list):
-        print(f"Initializing gateway with tags: {tags}")
-        self.tags = tags
-        self.ahrs_list = [
-            MadgwickAHRS(cfg.SAMPLE_PERIOD, cfg.BETA) for _ in range(len(tags))
-        ]
+    def __init__(self, sensor_tags: list):
+        print(f"Initializing gateway with tags: {sensor_tags}")
+        # TODO: hacky way to pass data from while true loop
+        self.sensor_tags = dict[str, SensorTagData or None]()
+        for address in sensor_tags:
+            self.sensor_tags[address] = None
 
-    async def output_data(
-        self, functor: Callable[[[float, float, float]], None] = None
-    ):
-        while True:
-            await asyncio.sleep(0.1)
-            quaternions = [ahrs.quaternion for ahrs in self.ahrs_list]
-            yaws = [get_yaw(*q) for q in quaternions]
+        self.computer_publisher = Client()
+        self.computer_publisher.connect(cfg.COMPUTER_HOST)
 
-            if yaws[0] == 0.0:
-                continue
-            # save_data(yaw_1,yaw_2,yaw_3)
-            print(yaws)
-            functor(yaws)
-
-    async def main(self, functor):
+    async def main(self):
         await asyncio.gather(
-            *[self.run(i) for i in range(len(self.tags))],
-            self.output_data(functor),
+            *[self.connect(address) for address in self.sensor_tags.keys()],
+            self.output_data(),
         )
 
-    async def run(self, tag_no):
-        print(f"Connecting sensor: {tag_no}")
-        async with BleakClient(self.tags[tag_no]) as client:
+    async def connect(self, address: str):
+        print(f"Connecting sensor: {address}")
+        async with BleakClient(address) as client:
             x = await client.is_connected()
-            print("Sensor " + str(tag_no) + " Connected: {0}".format(x))
+            click.echo(f"Sensor {address} Connected: {x}")
 
             acc_sensor = AccelerometerSensorMovementSensorMPU9250()
             gyro_sensor = GyroscopeSensorMovementSensorMPU9250()
@@ -56,7 +47,32 @@ class Gateway:
             movement_sensor.register(magneto_sensor)
             await movement_sensor.start_listener(client)
 
+            init = False
             while True:
                 await asyncio.sleep(0.1)
-                g, a, m = gyro_sensor.data, acc_sensor.data, magneto_sensor.data
-                self.ahrs_list[tag_no].update(*g, *a, *m)
+                if not await client.is_connected():
+                    raise ConnectionError()
+                timestamp = arrow.now("+08:00").timestamp()
+                gyro_data = SensorData(*gyro_sensor.data)
+                acc_data = SensorData(*acc_sensor.data)
+                magneto_data = SensorData(*magneto_sensor.data)
+                data = SensorTagData(
+                    client.address, timestamp, gyro_data, acc_data, magneto_data
+                )
+
+                # Check for initial invalid data
+                if not init:
+                    if not data.is_valid():
+                        continue
+                    init = True
+
+                self.sensor_tags[client.address] = data
+
+    async def output_data(self):
+        while True:
+            await asyncio.sleep(0.1)
+            if None in self.sensor_tags.values():
+                continue
+            payload = GatewayData(list(self.sensor_tags.values()))
+            payload = payload.to_json().encode()
+            self.computer_publisher.publish(cfg.GATEWAY_TOPIC, payload=payload)
